@@ -3,12 +3,14 @@
 #include <linux/netfilter.h>
 #include <linux/netfilter_ipv4.h>
 #include <linux/ip.h>
+#include <linux/timer.h>
 
 // Biến để lưu IP cần chặn, kiểu chuỗi
 static char *blocked_ip = "192.168.2.9"; // Giá trị mặc định
 module_param(blocked_ip, charp, 0644); // Định nghĩa tham số module
 MODULE_PARM_DESC(blocked_ip, "IP address to block (e.g., 192.168.2.9)");
-
+struct timer_list my_timer;
+bool block_active = 0;
 
 /* .dev, .priv, .hook_ops_type: Không được khai báo trong ví dụ của bạn,
  nghĩa là chúng để mặc định (thường là NULL cho .dev và .priv, .hook_ops_type có thể là NF_HOOK_OP_NOT_PASSED nếu không chỉ định).
@@ -16,6 +18,11 @@ MODULE_PARM_DESC(blocked_ip, "IP address to block (e.g., 192.168.2.9)");
 .dev: Để NULL nếu áp dụng cho tất cả giao diện.
 .priv: Để NULL nếu không cần dữ liệu tùy chỉnh.
 .hook_ops_type: Ít dùng trong module cơ bản, thường để mặc định.*/
+
+void timer_callback (struct timer_list *t) {
+    printk(KERN_INFO "Timer expired, disabling block for IP %s\n", blocked_ip);
+    block_active = 0; // Tắt chế độ chặn
+}
 
 int my_hook_func (void *priv,
 			       struct sk_buff *skb,
@@ -46,9 +53,17 @@ int my_hook_func (void *priv,
         ethh->h_dest[3], ethh->h_dest[4], ethh->h_dest[5]);
 
     if ( !strcmp (src_ip_str, blocked_ip) && proto == IPPROTO_ICMP) {
-        printk(KERN_INFO "Blocked packet with src ip : %s , des ip : %s\n", src_ip_str, des_ip_str);
-        printk(KERN_INFO "Source MAC: %s, Destination MAC: %s \n", mac_src, mac_dst);
-        return NF_DROP; // Chặn gói tin
+        if (!timer_active) {
+            printk(KERN_INFO "Enable blocking for IP %s |||\n", blocked_ip);
+            timer_active = 1;
+            mod_timer(&my_timer, jiffies + msecs_to_jiffies(5000));
+        }
+
+        if (timer_active) {
+            printk(KERN_INFO "Blocked packet with src ip : %s , des ip : %s\n", src_ip_str, des_ip_str);
+            printk(KERN_INFO "Source MAC: %s, Destination MAC: %s \n", mac_src, mac_dst);
+            return NF_DROP; // Chặn gói tin
+        }
     }
 
     return NF_ACCEPT; // Cho qua
@@ -63,12 +78,14 @@ static struct nf_hook_ops my_hook = {
 
 static int __init my_module_init(void) {
     printk(KERN_INFO "Netfilter module loaded\n");
+    timer_setup (&my_timer, timer_callback); // Khởi tạo timer
     nf_register_net_hook(&init_net, &my_hook); // Đăng ký my_hook với netfilter
     return 0;
 }
 
 static void __exit my_module_exit(void) {
     nf_unregister_net_hook(&init_net, &my_hook); // Húy Đăng ký my_hook với netfilter
+    del_timer_sync(&my_timer);
     printk(KERN_INFO "Netfilter module unloaded\n");
 }
 
