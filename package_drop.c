@@ -53,13 +53,13 @@ int my_hook_func (void *priv,
         ethh->h_dest[3], ethh->h_dest[4], ethh->h_dest[5]);
 
     if ( !strcmp (src_ip_str, blocked_ip) && proto == IPPROTO_ICMP) {
-        if (!timer_active) {
+        if (!block_active) {
             printk(KERN_INFO "Enable blocking for IP %s |||\n", blocked_ip);
-            timer_active = 1;
+            block_active = 1;
             mod_timer(&my_timer, jiffies + msecs_to_jiffies(5000));
         }
 
-        if (timer_active) {
+        if (block_active) {
             printk(KERN_INFO "Blocked packet with src ip : %s , des ip : %s\n", src_ip_str, des_ip_str);
             printk(KERN_INFO "Source MAC: %s, Destination MAC: %s \n", mac_src, mac_dst);
             return NF_DROP; // Chặn gói tin
