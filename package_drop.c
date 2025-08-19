@@ -78,7 +78,7 @@ static struct nf_hook_ops my_hook = {
 
 static int __init my_module_init(void) {
     printk(KERN_INFO "Netfilter module loaded\n");
-    timer_setup (&my_timer, timer_callback); // Khởi tạo timer
+    timer_setup (&my_timer, timer_callback, 0); // Khởi tạo timer
     nf_register_net_hook(&init_net, &my_hook); // Đăng ký my_hook với netfilter
     return 0;
 }
