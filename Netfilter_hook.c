@@ -136,8 +136,9 @@ static struct nf_hook_ops my_hooks[] = {
 
 static int __init my_module_init(void) {
     int ret;
+    int i;
     printk(KERN_INFO "Netfilter module loaded\n");
-    for (int i = 0; i < ARRAY_SIZE(my_hooks); i++) {
+    for (i = 0; i < ARRAY_SIZE(my_hooks); i++) {
         ret = nf_register_net_hook(&init_net, &my_hooks[i]);
         if (ret < 0) {
             printk(KERN_ERR "Failed to register hook %d\n", my_hooks[i].hooknum);
