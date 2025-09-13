@@ -37,13 +37,18 @@ static int my_hook_func(void *priv, struct sk_buff *skb, const struct nf_hook_st
             hook_name = "UNKNOWN";
             break;
     }
-    printk(KERN_INFO "Processing packet at stage: %s (%s)\n", hook_name, state->in ? state->in->name : "N/A");
 
     struct iphdr *iph = (struct iphdr *)skb_network_header(skb);
     if (!iph) {
-        printk(KERN_INFO "Hook %u (%s): No IP header found\n", state->hook, state->in ? state->in->name : "N/A");
-        return NF_ACCEPT;
+        return NF_ACCEPT; // Bỏ qua nếu không có IP header
     }
+
+    // Chỉ xử lý khi là ICMP
+    if (iph->protocol != IPPROTO_ICMP) {
+        return NF_ACCEPT; // Bỏ qua các giao thức khác
+    }
+
+    printk(KERN_INFO "Processing packet at stage: %s (%s)\n", hook_name, state->in ? state->in->name : "N/A");
 
     __be32 src_ip = iph->saddr;
     __be32 des_ip = iph->daddr;
@@ -71,24 +76,16 @@ static int my_hook_func(void *priv, struct sk_buff *skb, const struct nf_hook_st
            state->hook, state->in ? state->in->name : "N/A",
            src_ip_str, des_ip_str, proto, iph->ttl, ntohs(iph->tot_len), ntohs(iph->id), ntohs(iph->frag_off));
 
-    // Kiểm tra và in TCP/UDP/ICMP header
-    if (proto == IPPROTO_TCP && skb->len > (iph->ihl * 4)) {
-        struct tcphdr *tcph = (struct tcphdr *)(skb->data + (iph->ihl * 4));
-        printk(KERN_INFO "Hook %u: TCP Info - Src Port: %u, Dst Port: %u, Seq: %u, Ack: %u, Flags: %02x\n",
-               state->hook, ntohs(tcph->source), ntohs(tcph->dest), ntohl(tcph->seq), ntohl(tcph->ack_seq), tcph->fin);
-    } else if (proto == IPPROTO_UDP && skb->len > (iph->ihl * 4)) {
-        struct udphdr *udph = (struct udphdr *)(skb->data + (iph->ihl * 4));
-        printk(KERN_INFO "Hook %u: UDP Info - Src Port: %u, Dst Port: %u, Length: %u\n",
-               state->hook, ntohs(udph->source), ntohs(udph->dest), ntohs(udph->len));
-    } else if (proto == IPPROTO_ICMP && skb->len > (iph->ihl * 4)) {
+    // Kiểm tra và in ICMP header
+    if (proto == IPPROTO_ICMP && skb->len > (iph->ihl * 4)) {
         struct icmphdr *icmph = (struct icmphdr *)(skb->data + (iph->ihl * 4));
         printk(KERN_INFO "Hook %u: ICMP Info - Type: %u, Code: %u, ID: %u, Seq: %u\n",
                state->hook, icmph->type, icmph->code, ntohs(icmph->un.echo.id), ntohs(icmph->un.echo.sequence));
     }
 
     // In payload (nếu có)
-    unsigned char *payload = skb->data + (iph->ihl * 4) + (proto == IPPROTO_TCP ? sizeof(struct tcphdr) : proto == IPPROTO_UDP ? sizeof(struct udphdr) : proto == IPPROTO_ICMP ? sizeof(struct icmphdr) : 0);
-    int payload_len = skb->len - (iph->ihl * 4) - (proto == IPPROTO_TCP ? sizeof(struct tcphdr) : proto == IPPROTO_UDP ? sizeof(struct udphdr) : proto == IPPROTO_ICMP ? sizeof(struct icmphdr) : 0);
+    unsigned char *payload = skb->data + (iph->ihl * 4) + (proto == IPPROTO_ICMP ? sizeof(struct icmphdr) : 0);
+    int payload_len = skb->len - (iph->ihl * 4) - (proto == IPPROTO_ICMP ? sizeof(struct icmphdr) : 0);
     if (payload_len > 0) {
         printk(KERN_INFO "Hook %u: Payload (đầu 10 byte): ", state->hook);
         for (int i = 0; i < (payload_len > 10 ? 10 : payload_len); i++) {
@@ -136,7 +133,7 @@ static struct nf_hook_ops my_hooks[] = {
 
 static int __init my_module_init(void) {
     int ret;
-    int i;
+    int i; // Khai báo i ngoài vòng for
     printk(KERN_INFO "Netfilter module loaded\n");
     for (i = 0; i < ARRAY_SIZE(my_hooks); i++) {
         ret = nf_register_net_hook(&init_net, &my_hooks[i]);
@@ -166,4 +163,4 @@ module_exit(my_module_exit);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("TuanTNT19");
-MODULE_DESCRIPTION("Netfilter Module for Packet Logging");
+MODULE_DESCRIPTION("Netfilter Module for ICMP Packet Logging");
