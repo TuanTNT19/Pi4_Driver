@@ -67,6 +67,8 @@ static int my_hook_func(void *priv, struct sk_buff *skb, const struct nf_hook_st
         snprintf(mac_dst, sizeof(mac_dst), "%02x:%02x:%02x:%02x:%02x:%02x",
                  ethh->h_dest[0], ethh->h_dest[1], ethh->h_dest[2],
                  ethh->h_dest[3], ethh->h_dest[4], ethh->h_dest[5]);
+        printk(KERN_INFO "Hook %u (%s): Ethernet Info - Src MAC: %s, Dst MAC: %s\n",
+           state->hook, state->in ? state->in->name : "N/A", mac_src, mac_dst);
     } else {
         printk(KERN_INFO "Hook %u (%s): No Ethernet header available\n", state->hook, state->in ? state->in->name : "N/A");
     }
