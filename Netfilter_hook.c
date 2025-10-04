@@ -43,11 +43,6 @@ static int my_hook_func(void *priv, struct sk_buff *skb, const struct nf_hook_st
         return NF_ACCEPT; // Bỏ qua nếu không có IP header
     }
 
-    // Chỉ xử lý khi là ICMP
-    if (iph->protocol != IPPROTO_ICMP) {
-        return NF_ACCEPT; // Bỏ qua các giao thức khác
-    }
-
     printk(KERN_INFO "Processing packet at stage: %s (%s)\n", hook_name, state->in ? state->in->name : "N/A");
 
     __be32 src_ip = iph->saddr;
