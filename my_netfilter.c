@@ -9,7 +9,7 @@
 #include <linux/skbuff.h>
 #include <linux/inet.h>
 
-static int my_hook_func(void *priv, struct sk_buff *skb, const struct nf_hook_state *state);
+static unsigned int my_hook_func(void *priv, struct sk_buff *skb, const struct nf_hook_state *state);
 static struct nf_hook_ops my_hook = {
     .hook = (nf_hookfn *)my_hook_func,
     .hooknum = NF_INET_PRE_ROUTING,
@@ -29,11 +29,11 @@ static int __init my_module_init(void) {
 }
 
 static void __exit my_module_exit(void) {
-    nf_register_net_hook(&init_net, &my_hook);
+    nf_unregister_net_hook(&init_net, &my_hook);
     printk("------ Kernel Netfilter module unloaded -----\n");
 }
 
-static int my_hook_func(void *priv, struct sk_buff *skb, const struct nf_hook_state *state){
+static unsigned int my_hook_func(void *priv, struct sk_buff *skb, const struct nf_hook_state *state){
     char *hook_name;
     switch (state->hook) {
         case NF_INET_PRE_ROUTING:
