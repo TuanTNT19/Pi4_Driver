@@ -10,7 +10,7 @@
 #include <linux/inet.h>
 
 static int my_hook_func(void *priv, struct sk_buff *skb, const struct nf_hook_state *state);
-static struct nf_hook_ops my_hook {
+static struct nf_hook_ops my_hook = {
     .hook = (nf_hookfn *)my_hook_func,
     .hooknum = NF_INET_PRE_ROUTING,
     .pf = NFPROTO_IPV4,
@@ -28,7 +28,7 @@ static int __init my_module_init(void) {
     return ret ;
 }
 
-static void __exit my_module_exit() {
+static void __exit my_module_exit(void) {
     nf_register_net_hook(&init_net, &my_hook);
     printk("------ Kernel Netfilter module unloaded -----\n");
 }
@@ -57,9 +57,9 @@ static int my_hook_func(void *priv, struct sk_buff *skb, const struct nf_hook_st
     }
 
     struct iphdr *iph = ip_hdr(skb);
-    __u8 L3_proto = iph->proto;
+    __u8 L3_proto = iph->protocol;
     if (L3_proto == IPPROTO_ICMP) {
-        prink ("This is ICMP \n");
+        printk ("This is ICMP \n");
         return NF_DROP;
     }
 
