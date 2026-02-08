@@ -21,16 +21,16 @@ static int __init my_module_init(void) {
     int ret ;
     ret = nf_register_net_hook(&init_net, &my_hook);
     if (ret < 0) {
-        printk("------ Kernel Netfilter module loading failed-----");
+        pr_info("------ Kernel Netfilter module loading failed-----");
         return ret;
     }
-    printk("------ Kernel Netfilter module loaded -----\n");
+    pr_info("------ Kernel Netfilter module loaded -----\n");
     return ret ;
 }
 
 static void __exit my_module_exit(void) {
     nf_unregister_net_hook(&init_net, &my_hook);
-    printk("------ Kernel Netfilter module unloaded -----\n");
+    pr_info("------ Kernel Netfilter module unloaded -----\n");
 }
 
 static unsigned int my_hook_func(void *priv, struct sk_buff *skb, const struct nf_hook_state *state){
@@ -56,10 +56,12 @@ static unsigned int my_hook_func(void *priv, struct sk_buff *skb, const struct n
             break;
     }
 
+    pr_info ("Netfilter hook point: %s\n", hook_name);
+
     struct iphdr *iph = ip_hdr(skb);
     __u8 L3_proto = iph->protocol;
     if (L3_proto == IPPROTO_ICMP) {
-        printk ("This is ICMP \n");
+        pr_info ("This is ICMP \n");
         return NF_DROP;
     }
 
