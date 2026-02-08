@@ -58,9 +58,21 @@ static unsigned int my_hook_func(void *priv, struct sk_buff *skb, const struct n
 
     struct iphdr *iph = ip_hdr(skb);
     __u8 L3_proto = iph->protocol;
+    __be32 src_ip = iph->saddr;
+    __be32 des_ip = iph->daddr;
+    char src_ip_str[16], des_ip_str[16];
+    snprintf(src_ip_str, sizeof(src_ip_str), "%pI4", &src_ip);
+    snprintf(des_ip_str, sizeof(des_ip_str), "%pI4", &des_ip);
     if (L3_proto == IPPROTO_ICMP) {
         pr_info ("This is ICMP \n");
-        return NF_DROP;
+        if (!strmcp (src_ip_str, "192.168.1.101")) {
+            pr_info ("Packet from %s to %s  --> DROP \n", src_ip_str, des_ip_str);
+            return NF_DROP;
+        }
+        else {
+            pr_info ("Packet from %s to %s  --> ACCEPT \n", src_ip_str, des_ip_str);
+            return NF_ACCEPT;
+        }
     }
 
     return NF_ACCEPT;
