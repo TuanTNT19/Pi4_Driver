@@ -12,7 +12,7 @@
 static unsigned int my_hook_func(void *priv, struct sk_buff *skb, const struct nf_hook_state *state);
 static struct nf_hook_ops my_hook = {
     .hook = (nf_hookfn *)my_hook_func,
-    .hooknum = NF_INET_PRE_ROUTING,
+    .hooknum = NF_INET_LOCAL_IN,
     .pf = NFPROTO_IPV4,
     .priority = NF_IP_PRI_FIRST,
 };
@@ -55,8 +55,6 @@ static unsigned int my_hook_func(void *priv, struct sk_buff *skb, const struct n
             hook_name = "UNKNOWN";
             break;
     }
-
-    pr_info ("Netfilter hook point: %s\n", hook_name);
 
     struct iphdr *iph = ip_hdr(skb);
     __u8 L3_proto = iph->protocol;
