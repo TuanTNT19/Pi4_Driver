@@ -65,7 +65,7 @@ static unsigned int my_hook_func(void *priv, struct sk_buff *skb, const struct n
     snprintf(des_ip_str, sizeof(des_ip_str), "%pI4", &des_ip);
     if (L3_proto == IPPROTO_ICMP) {
         pr_info ("This is ICMP \n");
-        if (!strcmp (src_ip_str, "192.168.1.101")) {
+        if (!strcmp (des_ip_str, "192.168.1.101")) {
             pr_info ("Packet from %s to %s  --> DROP \n", src_ip_str, des_ip_str);
             return NF_DROP;
         }
