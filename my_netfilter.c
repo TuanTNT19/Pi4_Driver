@@ -69,8 +69,8 @@ static unsigned int my_hook_func(void *priv, struct sk_buff *skb, const struct n
         if (L3_proto == IPPROTO_UDP) {
             pr_info ("This is UDP package\n");
             pr_info ("This init source IP is : %s\n", src_ip_str);
-            pr_info ("Change IP source to 192.168.1.200 ...\n");
-            iph->saddr = in_aton("192.168.1.200");
+            pr_info ("Change IP source to 192.168.1.101 ...\n");
+            iph->saddr = in_aton("192.168.1.101");
         }
     }
     return NF_ACCEPT;
